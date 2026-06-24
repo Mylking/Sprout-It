@@ -1,7 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import { ThemeToggle, useTheme } from "./theme-provider";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -10,6 +12,83 @@ const NAV = [
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ] as const;
+
+function ProfileDropdown({ scrolled }: { scrolled: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<{ email: string } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) setUser({ email: data.session.user.email ?? "" });
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { email: session.user.email ?? "" } : null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setOpen(false);
+    toast.success("Signed out");
+    navigate({ to: "/" });
+  };
+
+  if (!user) return null;
+
+  const initial = user.email.charAt(0).toUpperCase();
+  const textCls = scrolled ? "text-[#F5F0E8]" : "text-parchment";
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-9 h-9 rounded-full border border-steel flex items-center justify-center text-sm font-semibold transition-colors hover:border-brass ${scrolled ? "bg-[rgba(255,255,255,0.1)] text-[#F5F0E8]" : "bg-iron text-parchment"}`}
+        aria-label="Profile menu"
+      >
+        {initial}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-56 bg-surface border border-steel rounded shadow-lg z-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-steel">
+            <p className="text-[10px] uppercase tracking-widest text-ivory">Signed in as</p>
+            <p className="text-sm text-parchment truncate mt-0.5">{user.email}</p>
+          </div>
+          <div className="py-1">
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm text-parchment hover:bg-iron hover:text-brass transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Admin Panel
+            </Link>
+            <button
+              onClick={signOut}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-iron transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -52,9 +131,11 @@ function Navbar() {
             </Link>
           ))}
           <ThemeToggle />
+          <ProfileDropdown scrolled={scrolled} />
         </nav>
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
+          <ProfileDropdown scrolled={scrolled} />
           <button
             className={`text-xl ${textCls}`}
             aria-label="Toggle menu"
