@@ -12,6 +12,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,10 +45,21 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      toast.success("Signed in");
-      navigate({ to: "/" });
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Signed in successfully!");
+        navigate({ to: "/" });
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        toast.success("Account created! Check your email to confirm.");
+        setMode("signin");
+      }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -55,12 +67,16 @@ function AuthPage() {
     }
   };
 
+  const inputCls = "w-full bg-background border border-steel rounded px-3 py-2.5 text-sm text-parchment focus:border-brass outline-none";
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-background">
       <div className="absolute top-6 right-6"><ThemeToggle /></div>
       <div className="w-full max-w-md card-industrial p-8">
         <h1 className="font-display text-3xl text-parchment text-center">SproutIt Login</h1>
-        <p className="text-center text-ivory text-sm mt-2">Sign in to manage products.</p>
+        <p className="text-center text-ivory text-sm mt-2">
+          {mode === "signin" ? "Sign in to manage products." : "Create your account."}
+        </p>
         <button
           type="button"
           onClick={onGoogle}
@@ -73,11 +89,19 @@ function AuthPage() {
         <div className="my-6 flex items-center gap-3 text-[10px] uppercase tracking-widest text-ivory">
           <div className="flex-1 h-px bg-steel" /> or <div className="flex-1 h-px bg-steel" />
         </div>
-        <form onSubmit={onSubmit} className="mt-8 space-y-4">
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email" className="w-full bg-background border border-steel rounded px-3 py-2.5 text-sm text-parchment focus:border-brass outline-none" />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Password" className="w-full bg-background border border-steel rounded px-3 py-2.5 text-sm text-parchment focus:border-brass outline-none" />
-          <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? "…" : "Sign In"}</button>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="Email" className={inputCls} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Password" className={inputCls} />
+          <button type="submit" disabled={loading} className="btn-primary w-full">
+            {loading ? "…" : mode === "signin" ? "Sign In" : "Create Account"}
+          </button>
         </form>
+        <button
+          onClick={() => { setMode((m) => (m === "signin" ? "signup" : "signin")); setEmail(""); setPassword(""); }}
+          className="block mx-auto mt-6 text-xs text-ivory hover:text-brass uppercase tracking-widest"
+        >
+          {mode === "signin" ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+        </button>
       </div>
     </div>
   );
