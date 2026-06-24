@@ -20,6 +20,10 @@ function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const textCls = scrolled ? "text-[#F5F0E8]" : "text-parchment";
+  const subTextCls = scrolled ? "text-[#C8C0B0]" : "text-ivory";
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all ${
@@ -30,8 +34,8 @@ function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
         <Link to="/" className="flex flex-col leading-none">
-          <span className="font-display text-2xl text-parchment tracking-tight">SproutIt</span>
-          <span className="text-[10px] uppercase tracking-[0.22em] text-ivory mt-1">
+          <span className={`font-display text-2xl tracking-tight ${textCls}`}>SproutIt</span>
+          <span className={`text-[10px] uppercase tracking-[0.22em] mt-1 ${subTextCls}`}>
             Design &amp; Fabrication
           </span>
         </Link>
@@ -40,7 +44,7 @@ function Navbar() {
             <Link
               key={n.to}
               to={n.to}
-              className="text-sm text-parchment hover:text-brass transition-colors"
+              className={`text-sm transition-colors hover:text-brass ${textCls}`}
               activeProps={{ className: "text-brass" }}
               activeOptions={{ exact: n.to === "/" }}
             >
@@ -52,7 +56,7 @@ function Navbar() {
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
           <button
-            className="text-parchment text-xl"
+            className={`text-xl ${textCls}`}
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}
           >
