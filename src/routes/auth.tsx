@@ -59,7 +59,7 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center px-6 bg-background">
       <div className="absolute top-6 right-6"><ThemeToggle /></div>
       <div className="w-full max-w-md card-industrial p-8">
-        <h1 className="font-display text-3xl text-parchment text-center">SproutIt Admin</h1>
+        <h1 className="font-display text-3xl text-parchment text-center">SproutIt Login</h1>
         <p className="text-center text-ivory text-sm mt-2">Sign in to manage products.</p>
         <button
           type="button"
